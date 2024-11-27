@@ -45,4 +45,3 @@ if __name__ == '__main__':
             loaded_weights[k] = ckpt[k]
 
     torch.save(loaded_weights, args.output)
-
