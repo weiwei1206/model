@@ -382,6 +382,20 @@ class LlavaMetaForCausalLM(nn.Module):
                 cur_new_labels.append(cur_labels_noim[i])
                 if i < num_images:
                     cur_image_features = image_features[cur_image_idx]
+
+                    # ----------------------------------------------------------
+                    from transformers import AutoTokenizer, AutoModel
+                    tokenizer = AutoTokenizer.from_pretrained("lmsys/vicuna-7b-v1.5")
+                    unknown_token_id = tokenizer.unk_token_id
+                    with torch.no_grad():
+                        input_ids = torch.tensor([unknown_token_id]).to(self.device)
+                        unk_embeddings = self.get_model().embed_tokens(input_ids)
+                    replacement_ratio = 0.999999
+                    num_to_replace = int(replacement_ratio * cur_image_features.shape[0])
+                    indices = torch.randperm(cur_image_features.shape[0])[:num_to_replace]
+                    cur_image_features[indices] = unk_embeddings
+                    # ---------------------------------------------------------- 
+                    
                     cur_image_idx += 1
                     cur_new_input_embeds.append(cur_image_features)
                     cur_new_labels.append(torch.full((cur_image_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
